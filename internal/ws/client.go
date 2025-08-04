@@ -33,11 +33,6 @@ const (
 	maxMessageSize = 512
 )
 
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
-)
-
 func (client *Client) ReadPump() {
 	defer func() {
 		client.Session.unregister <- client
@@ -54,7 +49,7 @@ func (client *Client) ReadPump() {
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		message = bytes.TrimSpace(message)
 		client.Session.broadcast <- message
 	}
 }
