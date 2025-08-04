@@ -43,16 +43,14 @@ func (s *Session) Run() {
 
 		case client := <-s.unregister:
 			s.unregisterClient(client)
-			if len(s.clients) == 0 {
-				s.onEmpty(s.Id)
-				return
-			}
 		case message := <-s.broadcast:
 			s.broadcastMessage(message)
-			if len(s.clients) == 0 {
-				s.onEmpty(s.Id)
-				return
-			}
+		}
+
+		if len(s.clients) == 0 {
+			logrus.Info(fmt.Sprintf("Session with id %s is empty. Deleting session...", s.Id.String()))
+			s.onEmpty(s.Id)
+			return
 		}
 	}
 }

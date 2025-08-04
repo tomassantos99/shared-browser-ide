@@ -14,10 +14,10 @@ func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
 		router.Get("/", CreateSession(storage))
 	})
 
-	r.Route("/session/{id}", func(router chi.Router) {
+	r.Route("/session/{id}/ws", func(router chi.Router) {
 
 		router.Use(middleware.SessionAuth)
 
-		router.Get("/ws", WsUpgrade(storage))
+		router.Get("/", WsUpgrade(storage))
 	})
 }

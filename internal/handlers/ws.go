@@ -25,21 +25,16 @@ type Message struct {
 
 func WsUpgrade(sessionStorage *storage.SessionStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			logrus.Error(err)
-		}
-		
 		var clientName = r.URL.Query().Get("name")
-
 		if clientName == "" {
 			errorMessage := "Missing client name"
 			logrus.Error(errorMessage)
 			http.Error(w, errorMessage, http.StatusNotFound)
 		}
-
+		
 		sessionId := chi.URLParam(r, "id")
 		idString, err := uuid.Parse(sessionId)
+		
 		if err != nil {
 			errorMessage := "Missing session ID"
 			logrus.Error(errorMessage)
@@ -54,12 +49,18 @@ func WsUpgrade(sessionStorage *storage.SessionStorage) http.HandlerFunc {
 			http.Error(w, errorMessage, http.StatusNotFound)
 			return
 		}
+		
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
 
 		var client *ws.Client = &ws.Client{
-			Name: clientName,
+			Name:       clientName,
 			Connection: conn,
-			Send: make(chan []byte, 256),
-			Session: clientSession,
+			Send:       make(chan []byte, 256),
+			Session:    clientSession,
 		}
 		clientSession.Register <- client
 
