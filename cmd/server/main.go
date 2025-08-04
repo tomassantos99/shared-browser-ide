@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"github.com/go-chi/chi"
+	"github.com/rs/cors"
 	"github.com/tomassantos99/shared-browser-ide/internal/handlers"
 	"github.com/tomassantos99/shared-browser-ide/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -15,13 +16,16 @@ func main() {
 
 	storage := storage.NewSessionStorage()
 
+	//TODO: route unrecognized paths to react app
+
 	//TODO: create goroutine to check for empty connections for more than x time
 
 	handlers.Handlers(r, storage)
 	
 	fmt.Println("Starting GO IDE service...")
 
-	err := http.ListenAndServe("localhost:8080", r)
+	handler := cors.Default().Handler(r) //TODO: actually handle this
+	err := http.ListenAndServe("localhost:8080", handler)
 
 	if err != nil {
 		logrus.Error(err)

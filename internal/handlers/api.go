@@ -18,9 +18,6 @@ func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
 
 		router.Use(middleware.SessionAuth)
 
-		// TODO: create page and route to it
-		// router.Get("/", BrowserIDE)
-
 		router.Get("/ws", WsUpgrade(storage))
 	})
 }
