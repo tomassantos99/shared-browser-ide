@@ -2,15 +2,16 @@ package handlers
 
 import (
 	"github.com/go-chi/chi"
-	chimiddle "github.com/go-chi/chi/middleware"
 	"github.com/tomassantos99/shared-browser-ide/internal/middleware"
+	"github.com/tomassantos99/shared-browser-ide/internal/storage"
+	chimiddle "github.com/go-chi/chi/middleware"
 )
 
-func Handlers(r *chi.Mux) {
+func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
 	r.Use(chimiddle.StripSlashes)
 
 	r.Route("/session/create", func(router chi.Router) {
-		router.Get("/", CreateSession)
+		router.Get("/", CreateSession(storage))
 	})
 
 	r.Route("/session/{id}", func(router chi.Router) {
@@ -20,6 +21,6 @@ func Handlers(r *chi.Mux) {
 		// TODO: create page and route to it
 		// router.Get("/", BrowserIDE)
 
-		router.Get("/ws", WsUpgrade)
+		router.Get("/ws", WsUpgrade(storage))
 	})
 }
