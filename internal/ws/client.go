@@ -70,7 +70,7 @@ func (client *Client) WritePump() {
 		case message, ok := <-client.Send:
 			client.Connection.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				// The hub closed the channel.
+				// The session closed the channel.
 				client.Connection.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -80,13 +80,6 @@ func (client *Client) WritePump() {
 				return
 			}
 			w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(client.Send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-client.Send)
-			}
 
 			if err := w.Close(); err != nil {
 				return
