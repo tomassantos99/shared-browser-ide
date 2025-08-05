@@ -58,7 +58,7 @@ func (client *Client) ReadPump() {
 			break
 		}
 
-		client.Session.broadcast <- convertedMessage
+		client.Session.codeUpdate <- convertedMessage
 	}
 }
 

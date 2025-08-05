@@ -6,6 +6,7 @@ import {
   ListboxOptions,
   ListboxOption,
 } from "@headlessui/react";
+import InputModal from "@/components/InputModal";
 
 interface CreateSessionResponse {
   id: string;
@@ -15,6 +16,9 @@ interface CreateSessionResponse {
 export default function Home() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [joinName, setJoinName] = useState("");
+  const [joinSessionId, setJoinSessionId] = useState("");
 
   const supportedLanguages = [
     "javascript",
@@ -51,7 +55,7 @@ export default function Home() {
   );
   const navigate = useNavigate();
 
-  const createSession = async () => {
+  async function createSession(): Promise<void> {
     if (!name.trim()) {
       alert("Please enter your name");
       return;
@@ -69,13 +73,35 @@ export default function Home() {
           name: name,
           password: data.password,
           language: preferredLanguage,
+          isSessionCreator: true,
         },
       });
     } catch (err: any) {
       setError(err.message || "Unknown error");
       console.log(error);
     }
-  };
+  }
+
+  function joinSession() {
+    if (!joinName.trim()) {
+      alert("Please enter your name");
+      return;
+    }
+
+    if (!joinSessionId.trim()) {
+      alert("Please enter your name");
+      return;
+    }
+
+    navigate(`/session/${joinSessionId}`, {
+      state: {
+        name: joinName,
+        password: "",
+        language: "",
+        isSessionCreator: false,
+      },
+    });
+  }
 
   return (
     <div className="min-h-screen w-full flex">
@@ -112,9 +138,16 @@ export default function Home() {
         </Listbox>
         <button
           onClick={createSession}
-          className="bg-white-600 text-white px-6 py-2 rounded hover:bg-white-700 w-full max-w-xs"
+          className="bg-white-600 text-white px-6 py-2 rounded hover:bg-white-700 w-full max-w-xs mb-4"
         >
           Create Session
+        </button>
+        <h4 className="text-2xl mb-4 font-bold">Or</h4>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-white-600 text-white px-6 py-2 rounded hover:bg-white-700 w-full max-w-xs mb-4"
+        >
+          Join Session
         </button>
       </div>
       <div
@@ -125,6 +158,15 @@ export default function Home() {
         }}
         aria-label="Decorative image"
       />
+      <InputModal
+        isOpen={showModal}
+        joinName={joinName}
+        joinSessionId={joinSessionId}
+        onClose={() => setShowModal(false)}
+        onSubmit={joinSession}
+        onJoinNameInput={setJoinName}
+        onJoinSessionIdInput={setJoinSessionId}
+      ></InputModal>
     </div>
   );
 }

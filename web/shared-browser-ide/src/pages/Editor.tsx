@@ -6,16 +6,50 @@ import CodeEditor from "@monaco-editor/react";
 export default function Editor() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const { name, password } = location.state || {};
+  const { name, password, language, isSessionCreator } = location.state || {};
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [editorContent, setEditorContent] = useState<string>(
+    `// Welcome ${name}`
+  );
+  const [editorProgrammingLanguage, setEditorProgrammingLanguage] =
+    useState<string>(language);
 
-  function sendMessage(message: string | undefined, _: any) {
+  type Message = {
+    type: string;
+    content: string;
+    programmingLanguage: string;
+  };
+
+  function onEditorChange(editorContent: string | undefined, _: any) {
+    if (editorContent === undefined) return;
+    setEditorContent(editorContent);
     if (socket?.readyState === socket?.OPEN) {
-      socket?.send(message ?? "failed");
+      const wsMessage: Message = createWsMessage(
+        editorContent,
+        editorProgrammingLanguage
+      );
+      socket?.send(JSON.stringify(wsMessage));
     }
   }
 
-  //Connect and test if message is sent on editor change
+  function onWsMessage(message: Message) {
+    if (message.type === "SessionCodeUpdate") {
+      setEditorContent(message.content);
+      setEditorProgrammingLanguage(message.programmingLanguage);
+    }
+  }
+
+  function createWsMessage(
+    content: string,
+    programmingLanguage: string
+  ): Message {
+    return {
+      type: "ClientCodeUpdate",
+      content,
+      programmingLanguage,
+    };
+  }
+
   useEffect(() => {
     const ws = new WebSocket(
       `ws://localhost:8080/session/${id}/ws?name=${name}`
@@ -24,6 +58,14 @@ export default function Editor() {
     setSocket(ws);
     ws.onopen = () => {
       console.log("WebSocket connection established.");
+
+      if (isSessionCreator) {
+        ws.send(
+          JSON.stringify(
+            createWsMessage(editorContent, editorProgrammingLanguage)
+          )
+        );
+      }
     };
 
     ws.onclose = () => {
@@ -34,7 +76,9 @@ export default function Editor() {
       console.error("WebSocket error:", err);
     };
 
-    ws.onmessage = (message) => console.log(message);
+    ws.onmessage = (message) => onWsMessage(JSON.parse(message.data));
+
+    ws.addEventListener;
 
     return () => {
       ws.close(); // clean up on unmount
@@ -48,9 +92,9 @@ export default function Editor() {
       <div className="mt-4">
         <CodeEditor
           height="80vh"
-          defaultLanguage="java"
-          defaultValue={`// Welcome ${name}`}
-          onChange={sendMessage}
+          onChange={onEditorChange}
+          value={editorContent}
+          language={editorProgrammingLanguage}
         />
       </div>
     </div>
