@@ -59,7 +59,7 @@ func WsUpgrade(sessionStorage *storage.SessionStorage) http.HandlerFunc {
 		var client *ws.Client = &ws.Client{
 			Name:       clientName,
 			Connection: conn,
-			Send:       make(chan []byte, 256),
+			Send:       make(chan ws.Message, 100),
 			Session:    clientSession,
 		}
 		clientSession.Register <- client

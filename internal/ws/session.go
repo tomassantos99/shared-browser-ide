@@ -12,7 +12,7 @@ import (
 type Session struct {
 	Id         uuid.UUID
 	clients    map[*Client]bool
-	broadcast  chan []byte
+	broadcast  chan Message
 	Register   chan *Client
 	unregister chan *Client
 	Password   string
@@ -25,7 +25,7 @@ const PASSWORD_LENGTH int = 5
 func NewSession(onEmpty func(sessionId uuid.UUID)) *Session {
 	return &Session{
 		Id:         uuid.New(),
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan Message),
 		Register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
@@ -69,7 +69,7 @@ func (s *Session) unregisterClient(client *Client) {
 	}
 }
 
-func (s *Session) broadcastMessage(message []byte) {
+func (s *Session) broadcastMessage(message Message) {
 	logrus.Info(fmt.Sprintf("Broadcasting message to %d clients", len(s.clients)))
 	for client := range s.clients {
 		select {

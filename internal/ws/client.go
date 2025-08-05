@@ -2,9 +2,11 @@ package ws
 
 import (
 	"bytes"
+	"encoding/json"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type Client struct {
@@ -13,8 +15,7 @@ type Client struct {
 	// The websocket Connection.
 	Connection *websocket.Conn
 
-	// Buffered channel of outbound messages.
-	Send chan []byte
+	Send chan Message
 
 	Name string
 }
@@ -43,14 +44,21 @@ func (client *Client) ReadPump() {
 	client.Connection.SetPongHandler(func(string) error { client.Connection.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := client.Connection.ReadMessage()
+		message = bytes.TrimSpace(message)
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logrus.Error(err)
+				logrus.Warn(err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(message)
-		client.Session.broadcast <- message
+
+		var convertedMessage, conversionError = convertMessage(message)
+		if conversionError != nil {
+			break
+		}
+
+		client.Session.broadcast <- convertedMessage
 	}
 }
 
@@ -74,7 +82,13 @@ func (client *Client) WritePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
+
+			var byteMessage, marshalErr = json.Marshal(message)
+			if marshalErr != nil {
+				logrus.Error("Error converting message from session")
+			} else {
+				w.Write(byteMessage)
+			}
 
 			if err := w.Close(); err != nil {
 				return
@@ -86,4 +100,17 @@ func (client *Client) WritePump() {
 			}
 		}
 	}
+}
+
+func convertMessage(message []byte) (Message, error) {
+	var convertedMessage Message
+
+	var err = json.Unmarshal(message, &convertedMessage)
+
+	if err != nil {
+		logrus.Error("Error converting message from client. ", err)
+		return DefaultMessage(), err
+	}
+
+	return convertedMessage, nil
 }
