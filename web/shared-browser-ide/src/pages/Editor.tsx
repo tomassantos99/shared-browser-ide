@@ -2,6 +2,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import SessionInfo from "@/components/SessionInfo";
 import CodeEditor from "@monaco-editor/react";
+import ErrorModal from "@/components/ErrorModal";
 
 export default function Editor() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function Editor() {
   );
   const [editorProgrammingLanguage, setEditorProgrammingLanguage] =
     useState<string>(language);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   type Message = {
     type: string;
@@ -50,9 +52,9 @@ export default function Editor() {
     };
   }
 
-  useEffect(() => {
+  function connectWebsocket() {
     const ws = new WebSocket(
-      `ws://localhost:8080/session/${id}/ws?name=${name}`
+      `ws://localhost:8080/session/${id}/connect/ws?name=${name}&password=${password}`
     );
 
     setSocket(ws);
@@ -73,16 +75,49 @@ export default function Editor() {
     };
 
     ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
+      console.log("Websocket error: ", err);
+
+      setErrorMessage("Oops! An error occured connecting to the server.");
     };
 
     ws.onmessage = (message) => onWsMessage(JSON.parse(message.data));
 
     ws.addEventListener;
+  }
 
-    return () => {
-      ws.close(); // clean up on unmount
-    };
+  async function verifySession() {
+    const res = await fetch(
+      `http://localhost:8080/session/${id}/connect?name=${name}&password=${password}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    return res.status;
+  }
+
+  useEffect(() => {
+    debugger;
+    verifySession().then((status) => {
+      switch (status) {
+        case 200:
+          connectWebsocket();
+          break;
+        case 403:
+          setErrorMessage("Invalid session password, try again buddy");
+          break;
+        case 404:
+          setErrorMessage("Invalid name or session ID, back to the lobby");
+          break;
+        default:
+          setErrorMessage("Unknown error. Tough luck buddy");
+      }
+
+      return () => {
+        socket?.close(); // clean up on unmount
+      };
+    });
   }, [id, name]);
 
   return (
@@ -97,6 +132,11 @@ export default function Editor() {
           language={editorProgrammingLanguage}
         />
       </div>
+      <ErrorModal
+        isOpen={!!errorMessage}
+        message={errorMessage ?? ""}
+        onClose={() => setErrorMessage(null)}
+      />
     </div>
   );
 }

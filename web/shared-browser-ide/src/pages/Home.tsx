@@ -19,6 +19,7 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [joinName, setJoinName] = useState("");
   const [joinSessionId, setJoinSessionId] = useState("");
+  const [joinSessionPassword, setJoinSessionPassword] = useState("");
 
   const supportedLanguages = [
     "javascript",
@@ -89,14 +90,19 @@ export default function Home() {
     }
 
     if (!joinSessionId.trim()) {
-      alert("Please enter your name");
+      alert("Please enter the session ID");
+      return;
+    }
+
+    if (!joinSessionPassword.trim()) {
+      alert("Please enter the session password");
       return;
     }
 
     navigate(`/session/${joinSessionId}`, {
       state: {
         name: joinName,
-        password: "",
+        password: joinSessionPassword,
         language: "",
         isSessionCreator: false,
       },
@@ -162,10 +168,12 @@ export default function Home() {
         isOpen={showModal}
         joinName={joinName}
         joinSessionId={joinSessionId}
+        joinSessionPassword={joinSessionPassword}
         onClose={() => setShowModal(false)}
         onSubmit={joinSession}
         onJoinNameInput={setJoinName}
         onJoinSessionIdInput={setJoinSessionId}
+        onJoinSessionPasswordInput={setJoinSessionPassword}
       ></InputModal>
     </div>
   );

@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi"
+	chimiddle "github.com/go-chi/chi/middleware"
 	"github.com/tomassantos99/shared-browser-ide/internal/middleware"
 	"github.com/tomassantos99/shared-browser-ide/internal/storage"
-	chimiddle "github.com/go-chi/chi/middleware"
 )
 
 func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
@@ -14,10 +16,13 @@ func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
 		router.Get("/", CreateSession(storage))
 	})
 
-	r.Route("/session/{id}/ws", func(router chi.Router) {
+	r.Route("/session/{id}/connect", func(router chi.Router) {
+		router.Use(middleware.HttpVariables)
 
-		router.Use(middleware.SessionAuth)
+		router.Use(middleware.SessionAuth(storage))
 
-		router.Get("/", WsUpgrade(storage))
+		router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("OK")) })
+
+		router.Get("/ws", WsUpgrade(storage))
 	})
 }

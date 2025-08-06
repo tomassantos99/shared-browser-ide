@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -26,11 +25,6 @@ type Message struct {
 func WsUpgrade(sessionStorage *storage.SessionStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var clientName = r.URL.Query().Get("name")
-		if clientName == "" {
-			errorMessage := "Missing client name"
-			logrus.Error(errorMessage)
-			http.Error(w, errorMessage, http.StatusNotFound)
-		}
 		
 		sessionId := chi.URLParam(r, "id")
 		idString, err := uuid.Parse(sessionId)
@@ -39,6 +33,7 @@ func WsUpgrade(sessionStorage *storage.SessionStorage) http.HandlerFunc {
 			errorMessage := "Missing session ID"
 			logrus.Error(errorMessage)
 			http.Error(w, errorMessage, http.StatusNotFound)
+			return
 		}
 
 		var clientSession, ok = sessionStorage.GetSession(idString)

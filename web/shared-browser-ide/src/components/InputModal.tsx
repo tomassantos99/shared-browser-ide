@@ -4,8 +4,10 @@ type InputModalProps = {
   isOpen: boolean;
   joinName: string;
   joinSessionId: string;
+  joinSessionPassword: string;
   onJoinNameInput: (joinName: string) => void;
   onJoinSessionIdInput: (joinSessionName: string) => void;
+  onJoinSessionPasswordInput: (joinSessionPassword: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 };
@@ -14,8 +16,10 @@ const InputModal: React.FC<InputModalProps> = ({
   isOpen,
   joinName,
   joinSessionId,
+  joinSessionPassword,
   onJoinNameInput,
   onJoinSessionIdInput,
+  onJoinSessionPasswordInput,
   onClose,
   onSubmit,
 }) => {
@@ -52,6 +56,22 @@ const InputModal: React.FC<InputModalProps> = ({
             type="text"
             value={joinSessionId}
             onChange={(e) => onJoinSessionIdInput(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="session-id"
+            className="block text-sm font-medium mb-1"
+          >
+            Session Password
+          </label>
+          <input
+            id="session-id"
+            type="password"
+            value={joinSessionPassword}
+            onChange={(e) => onJoinSessionPasswordInput(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

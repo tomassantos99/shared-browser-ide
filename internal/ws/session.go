@@ -3,7 +3,6 @@ package ws
 import (
 	"fmt"
 	"time"
-
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tomassantos99/shared-browser-ide/pkg"
@@ -93,7 +92,6 @@ func (s *Session) updateClientsEditorState(message Message) {
 		return
 	}
 	
-	logrus.Info(fmt.Sprintf("Broadcasting message to %d clients", len(s.clients)))
 	for client := range s.clients {
 		select {
 		case client.Send <- updateMessage:
