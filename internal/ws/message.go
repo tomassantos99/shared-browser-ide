@@ -3,17 +3,13 @@ package ws
 import (
 	"encoding/json"
 	"errors"
-	"github.com/sirupsen/logrus"
+	"slices"
 )
 
 type Message struct {
-	Type                MessageType `json:"type"`
-	ProgrammingLanguage string      `json:"programmingLanguage"`
-	Content             string      `json:"content"`
-}
-
-type MessageType struct {
-	label string
+	Type                string `json:"type"`
+	ProgrammingLanguage string `json:"programmingLanguage"`
+	Content             string `json:"content"`
 }
 
 const (
@@ -23,65 +19,54 @@ const (
 	Unknown           = "Unknown"
 )
 
-var validMessageTypes map[string]MessageType = map[string]MessageType{
-	ClientCodeUpdate:  {ClientCodeUpdate},
-	SessionCodeUpdate: {SessionCodeUpdate},
-	ClientsUpdate:     {ClientsUpdate},
-	Unknown:           {Unknown},
-}
-
-func (messageType MessageType) String() string {
-	return messageType.label
-}
-
-func messageTypeFromString(messageType string) (MessageType, error) {
-	var mType, ok = validMessageTypes[messageType]
-	if !ok {
-		return validMessageTypes[Unknown], errors.New("Unknown Message Type: " + messageType)
-	}
-
-	return mType, nil
+var validMessageTypes []string = []string{
+	ClientCodeUpdate,
+	SessionCodeUpdate,
+	ClientsUpdate,
+	Unknown,
 }
 
 func DefaultMessage() Message {
 	return Message{
-		Type:    MessageType{Unknown},
+		Type:    Unknown,
 		Content: "",
 	}
 }
 
 func CreateMessage(messageType string, programmingLanguage string, content string) (Message, error) {
-	var mType, err = messageTypeFromString(messageType)
+	var message = Message{
+		messageType,
+		programmingLanguage,
+		content,
+	}
+
+	var valError = message.Validate()
+	if valError != nil {
+		return DefaultMessage(), valError
+	}
+
+	return message, nil
+}
+
+func UnmarshalMessage(bytes []byte) (Message, error) {
+	var convertedMessage Message
+
+	var err = json.Unmarshal(bytes, &convertedMessage)
 	if err != nil {
 		return DefaultMessage(), err
 	}
 
-	return Message{
-		mType,
-		programmingLanguage,
-		content,
-	}, nil
-}
-
-func (messageType MessageType) MarshalJSON() ([]byte, error) {
-	return json.Marshal(messageType.label)
-}
-
-func (messageType *MessageType) UnmarshalJSON(data []byte) error {
-	var typeName string
-
-	var jsonErr = json.Unmarshal(data, &typeName)
-	if jsonErr != nil {
-		logrus.Error(jsonErr)
+	var valErr = convertedMessage.Validate()
+	if valErr != nil {
+		return DefaultMessage(), err
 	}
 
-	var mType, err = messageTypeFromString(typeName)
-	if err != nil {
-		logrus.Error(err)
-		*messageType = validMessageTypes[Unknown]
-		return err
-	}
+	return convertedMessage, nil
+}
 
-	*messageType = mType
+func (message *Message) Validate() error {
+	if !slices.Contains(validMessageTypes, message.Type) {
+		return errors.New("invalid message type")
+	}
 	return nil
 }

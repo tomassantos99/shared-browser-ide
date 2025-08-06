@@ -53,8 +53,9 @@ func (client *Client) ReadPump() {
 			break
 		}
 
-		var convertedMessage, conversionError = convertMessage(message)
-		if conversionError != nil {
+		var convertedMessage, unmarshalError = UnmarshalMessage(message)
+		if unmarshalError != nil {
+			logrus.Error(unmarshalError)
 			break
 		}
 
@@ -100,17 +101,4 @@ func (client *Client) WritePump() {
 			}
 		}
 	}
-}
-
-func convertMessage(message []byte) (Message, error) {
-	var convertedMessage Message
-
-	var err = json.Unmarshal(message, &convertedMessage)
-
-	if err != nil {
-		logrus.Error("Error converting message from client. ", err)
-		return DefaultMessage(), err
-	}
-
-	return convertedMessage, nil
 }
