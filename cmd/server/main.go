@@ -15,18 +15,16 @@ func main() {
 	var r *chi.Mux = chi.NewRouter();
 
 	storage := storage.NewSessionStorage()
-
-	//TODO: route unrecognized paths to react app
-
+	
 	//TODO: create goroutine to check for empty connections for more than x time
 
 	handlers.Handlers(r, storage)
 	
 	fmt.Println("Starting GO IDE service...")
-
+	
 	handler := cors.Default().Handler(r) //TODO: actually handle this
-	err := http.ListenAndServe("localhost:8080", handler)
-
+	err := http.ListenAndServe(":8080", handler)
+	
 	if err != nil {
 		logrus.Error(err)
 	}

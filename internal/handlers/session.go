@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-
 	"github.com/sirupsen/logrus"
 	"github.com/tomassantos99/shared-browser-ide/api"
 	"github.com/tomassantos99/shared-browser-ide/internal/storage"
