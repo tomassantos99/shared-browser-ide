@@ -59,6 +59,7 @@ func (client *Client) ReadPump() {
 			break
 		}
 
+		convertedMessage.Sender = client
 		client.Session.codeUpdate <- convertedMessage
 	}
 }

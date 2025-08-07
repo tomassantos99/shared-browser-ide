@@ -7,9 +7,11 @@ import (
 )
 
 type Message struct {
-	Type                string `json:"type"`
-	ProgrammingLanguage string `json:"programmingLanguage"`
-	Content             string `json:"content"`
+	Type                string  `json:"type"`
+	ProgrammingLanguage string  `json:"programmingLanguage"`
+	EditorContent       string  `json:"editorContent"`
+	Clients             []string  `json:"clients"`
+	Sender              *Client `json:"-"`
 }
 
 const (
@@ -28,16 +30,20 @@ var validMessageTypes []string = []string{
 
 func DefaultMessage() Message {
 	return Message{
-		Type:    Unknown,
-		Content: "",
+		Type:                Unknown,
+		EditorContent:       "",
+		ProgrammingLanguage: "",
+		Sender:              nil,
 	}
 }
 
-func CreateMessage(messageType string, programmingLanguage string, content string) (Message, error) {
+func CreateMessage(messageType string, programmingLanguage string, content string, clients []string, sender *Client) (Message, error) {
 	var message = Message{
 		messageType,
 		programmingLanguage,
 		content,
+		clients,
+		sender,
 	}
 
 	var valError = message.Validate()

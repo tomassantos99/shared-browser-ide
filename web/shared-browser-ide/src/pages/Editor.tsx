@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SessionInfo from "@/components/SessionInfo";
 import CodeEditor from "@monaco-editor/react";
 import ErrorModal from "@/components/ErrorModal";
@@ -8,47 +8,65 @@ export default function Editor() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { name, password, language, isSessionCreator } = location.state || {};
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
   const [editorContent, setEditorContent] = useState<string>(
     `// Welcome ${name}`
   );
   const [editorProgrammingLanguage, setEditorProgrammingLanguage] =
     useState<string>(language);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [connectedClients, setConnectedClients] = useState<string[]>([]);
+  const [isClientListOpen, setIsClientListOpen] = useState(false);
 
   type Message = {
     type: string;
-    content: string;
-    programmingLanguage: string;
+    editorContent: string | undefined;
+    programmingLanguage: string | undefined;
+    clients: string[] | undefined;
   };
 
   function onEditorChange(editorContent: string | undefined, _: any) {
     if (editorContent === undefined) return;
     setEditorContent(editorContent);
-    if (socket?.readyState === socket?.OPEN) {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
       const wsMessage: Message = createWsMessage(
         editorContent,
-        editorProgrammingLanguage
+        editorProgrammingLanguage,
+        undefined
       );
-      socket?.send(JSON.stringify(wsMessage));
+      socketRef?.current?.send(JSON.stringify(wsMessage));
     }
+  }
+
+  function handleCodeUpdateMessage(message: Message) {
+    setEditorContent(message.editorContent ?? "");
+    setEditorProgrammingLanguage(message.programmingLanguage ?? "");
+  }
+
+  function handleClientsUpdateMessage(message: Message) {
+    setConnectedClients(message.clients ?? []);
   }
 
   function onWsMessage(message: Message) {
     if (message.type === "SessionCodeUpdate") {
-      setEditorContent(message.content);
-      setEditorProgrammingLanguage(message.programmingLanguage);
+      handleCodeUpdateMessage(message);
+    }
+
+    if (message.type === "ClientsUpdate") {
+      handleClientsUpdateMessage(message);
     }
   }
 
   function createWsMessage(
     content: string,
-    programmingLanguage: string
+    programmingLanguage: string,
+    clients: string[] | undefined
   ): Message {
     return {
       type: "ClientCodeUpdate",
-      content,
+      editorContent: content,
       programmingLanguage,
+      clients,
     };
   }
 
@@ -57,14 +75,14 @@ export default function Editor() {
       `ws://localhost:8080/session/${id}/connect/ws?name=${name}&password=${password}`
     );
 
-    setSocket(ws);
+    socketRef.current = ws;
     ws.onopen = () => {
       console.log("WebSocket connection established.");
 
       if (isSessionCreator) {
         ws.send(
           JSON.stringify(
-            createWsMessage(editorContent, editorProgrammingLanguage)
+            createWsMessage(editorContent, editorProgrammingLanguage, undefined)
           )
         );
       }
@@ -98,7 +116,6 @@ export default function Editor() {
   }
 
   useEffect(() => {
-    debugger;
     verifySession().then((status) => {
       switch (status) {
         case 200:
@@ -113,17 +130,40 @@ export default function Editor() {
         default:
           setErrorMessage("Unknown error. Tough luck buddy");
       }
-
-      return () => {
-        socket?.close(); // clean up on unmount
-      };
     });
+    return () => {
+      socketRef.current?.close(); // clean up on unmount
+    };
   }, [id, name]);
 
   return (
     <div className="min-h-screen p-6 bg-gray-1000">
       <SessionInfo sessionId={id ?? ""} password={password} />
-      {/* Your editor component or iframe goes here */}
+      <div className="absolute top-4 right-4 z-50">
+        <button
+          onClick={() => setIsClientListOpen(!isClientListOpen)}
+          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+        >
+          {isClientListOpen ? "Hide Participants" : "Show Participants"}
+        </button>
+
+        {isClientListOpen && (
+          <div className="mt-2 bg-white text-black rounded shadow-lg p-4 max-w-xs">
+            <ul className="text-sm max-h-60 overflow-y-auto space-y-1">
+              {connectedClients.length > 0 ? (
+                connectedClients.map((client, idx) => (
+                  <li key={idx} className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    {client}
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-500">No one is here...</li>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
       <div className="mt-4">
         <CodeEditor
           height="80vh"
