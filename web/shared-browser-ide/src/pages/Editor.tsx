@@ -72,7 +72,7 @@ export default function Editor() {
 
   function connectWebsocket() {
     const ws = new WebSocket(
-      `ws://localhost:8080/session/${id}/connect/ws?name=${name}&password=${password}`
+      `ws://localhost:8080/api/session/${id}/connect/ws?name=${name}&password=${password}`
     );
 
     socketRef.current = ws;
@@ -105,7 +105,7 @@ export default function Editor() {
 
   async function verifySession() {
     const res = await fetch(
-      `http://localhost:8080/session/${id}/connect?name=${name}&password=${password}`,
+      `http://localhost:8080/api/session/${id}/connect?name=${name}&password=${password}`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Listbox,
@@ -63,7 +63,7 @@ export default function Home() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/session/create");
+      const response = await fetch("http://localhost:8080/api/session/create");
       if (!response.ok) {
         throw new Error(`Failed to create session: ${response.statusText}`);
       }

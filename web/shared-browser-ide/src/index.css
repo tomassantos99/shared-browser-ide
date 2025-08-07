@@ -60,6 +60,13 @@ button {
   transition: border-color 0.25s;
 }
 
+.copy-button {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer;
+}
+
 input {
   background-color: #1a1a1a;
   border-color: #1a1a1a !important
