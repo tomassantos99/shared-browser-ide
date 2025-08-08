@@ -13,7 +13,7 @@ func Handlers(r *chi.Mux, storage *storage.SessionStorage) {
 	r.Use(chimiddle.StripSlashes)
 
 	r.Route("/api", func(apiRouter chi.Router) {
-		apiRouter.Get("/session/create", CreateSession(storage))
+		apiRouter.Get("/session/create", CreateSession(storage)) // TODO: limit number of active sessions
 
 		apiRouter.Route("/session/{id}/connect", func(connectionRouter chi.Router) {
 			connectionRouter.Use(middleware.HttpVariables)

@@ -2,18 +2,22 @@ package ws
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/tomassantos99/shared-browser-ide/pkg"
-	"time"
 )
 
 type Session struct {
+	Mut          sync.RWMutex
 	Id           uuid.UUID
 	clients      map[*Client]bool
 	codeUpdate   chan Message
 	Register     chan *Client
 	unregister   chan *Client
+	Close        chan bool
 	Password     string
 	onEmpty      func(sessionId uuid.UUID)
 	editorState  EditorState
@@ -34,6 +38,7 @@ func NewSession(onEmpty func(sessionId uuid.UUID)) *Session {
 		codeUpdate:   make(chan Message),
 		Register:     make(chan *Client),
 		unregister:   make(chan *Client),
+		Close:        make(chan bool),
 		clients:      make(map[*Client]bool),
 		Password:     pkg.RandomString(PASSWORD_LENGTH),
 		LastActive:   time.Now(),
@@ -55,6 +60,10 @@ func (s *Session) Run() {
 		case message := <-s.codeUpdate:
 			s.updateEditorState(message.ProgrammingLanguage, message.EditorContent, message.Sender)
 			s.sendEditorStateUpdate(message)
+		case _ = <-s.Close:
+			s.closeClientConnections()
+			s.onEmpty(s.Id)
+			return
 		}
 
 		if len(s.clients) == 0 {
@@ -66,6 +75,9 @@ func (s *Session) Run() {
 }
 
 func (s *Session) registerClient(client *Client) {
+	s.Mut.Lock()
+	defer s.Mut.Unlock()
+
 	s.clients[client] = true
 	if s.sessionAdmin == nil {
 		s.sessionAdmin = client
@@ -84,6 +96,9 @@ func (s *Session) registerClient(client *Client) {
 }
 
 func (s *Session) unregisterClient(client *Client) {
+	s.Mut.Lock()
+	defer s.Mut.Unlock()
+
 	_, ok := s.clients[client]
 	if ok {
 		if s.sessionAdmin == client {
@@ -99,6 +114,9 @@ func (s *Session) unregisterClient(client *Client) {
 }
 
 func (s *Session) sendSessionClientsUpdate() {
+	s.Mut.RLock()
+	defer s.Mut.RUnlock()
+
 	var clients []string
 	for client := range s.clients {
 		clients = append(clients, client.Name)
@@ -115,13 +133,20 @@ func (s *Session) sendSessionClientsUpdate() {
 }
 
 func (s *Session) sendEditorStateUpdate(message Message) {
+	s.Mut.RLock()
+	clients := make([]*Client, 0, len(s.clients))
+	for client := range s.clients {
+		clients = append(clients, client)
+	}
+	s.Mut.RUnlock()
+
 	var updateMessage, err = CreateMessage(SessionCodeUpdate, message.ProgrammingLanguage, message.EditorContent, nil, message.Sender)
 	if err != nil {
 		logrus.Error(err)
 		return
 	}
 
-	for client := range s.clients {
+	for _, client := range clients {
 		select {
 		case client.Send <- updateMessage:
 		default:
@@ -131,9 +156,21 @@ func (s *Session) sendEditorStateUpdate(message Message) {
 }
 
 func (s *Session) updateEditorState(programmingLanguage string, content string, client *Client) {
+	s.Mut.Lock()
+	defer s.Mut.Unlock()
+
 	if s.sessionAdmin == client {
 		s.editorState.programmingLanguage = programmingLanguage
 	}
 	s.editorState.content = content
 	s.LastActive = time.Now()
+}
+
+func (s *Session) closeClientConnections() {
+	s.Mut.RLock()
+	defer s.Mut.RLock()
+
+	for client := range s.clients {
+		close(client.Send)
+	}
 }

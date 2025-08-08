@@ -11,9 +11,9 @@ type SessionStorage struct {
 	sessions map[uuid.UUID]*ws.Session
 }
 
-func NewSessionStorage() *SessionStorage{
+func NewSessionStorage() *SessionStorage {
 	return &SessionStorage{
-		sessions: make(map[uuid.UUID] *ws.Session),
+		sessions: make(map[uuid.UUID]*ws.Session),
 	}
 }
 
@@ -33,5 +33,6 @@ func (s *SessionStorage) GetSession(id uuid.UUID) (*ws.Session, bool) {
 func (s *SessionStorage) RemoveSession(id uuid.UUID) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
+	
 	delete(s.sessions, id)
 }

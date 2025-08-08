@@ -48,6 +48,7 @@ export default function Editor() {
   }
 
   function onWsMessage(message: Message) {
+    console.log(message);
     if (message.type === "SessionCodeUpdate") {
       handleCodeUpdateMessage(message);
     }
@@ -89,7 +90,7 @@ export default function Editor() {
     };
 
     ws.onclose = () => {
-      console.log("WebSocket connection closed.");
+      setErrorMessage("Session closed. Back to the lobby buddy.");
     };
 
     ws.onerror = (err) => {
@@ -121,11 +122,14 @@ export default function Editor() {
         case 200:
           connectWebsocket();
           break;
+        case 400:
+          setErrorMessage("Invalid name or password, try again buddy");
+          break;
         case 403:
-          setErrorMessage("Invalid session password, try again buddy");
+          setErrorMessage("Wrong session password, try again buddy");
           break;
         case 404:
-          setErrorMessage("Invalid name or session ID, back to the lobby");
+          setErrorMessage("Session not found, try again buddy");
           break;
         default:
           setErrorMessage("Unknown error. Tough luck buddy");

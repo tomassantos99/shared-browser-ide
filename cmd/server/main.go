@@ -14,11 +14,11 @@ func main() {
 	logrus.SetReportCaller(true);
 	var r *chi.Mux = chi.NewRouter();
 
-	storage := storage.NewSessionStorage()
+	sessionStorage := storage.NewSessionStorage()
 	
-	//TODO: create goroutine to check for empty connections for more than x time
+	go storage.MemoryCleanup(sessionStorage, 60, 300)
 
-	handlers.Handlers(r, storage)
+	handlers.Handlers(r, sessionStorage)
 	
 	fmt.Println("Starting GO IDE service...")
 	
