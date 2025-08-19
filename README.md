@@ -7,4 +7,4 @@ This repo contains code for both the react frontend (built using vite) and the g
 
 ## How to run
 
-To get the app rolling locally simply run `docker-compose up --build` and both the react app and go server will build and start running on port 8080 of your machine.
+To get the app rolling locally simply run `docker-compose up --build` and both the react app and go server will build and start running on port `8080` of your machine.
